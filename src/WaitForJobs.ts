@@ -48,12 +48,6 @@ export default class WaitForJobs {
         this.ignoreSkipped = getInput(INPUTS.IGNORE_SKIPPED) === "true";
         this.interval = parseInt(getInput(INPUTS.INTERVAL), 10);
         this.ttl = parseInt(getInput(INPUTS.TTL), 10);
-        if (this.ttl > 15) {
-            warning(
-                "Overwriting ttl to 15 minutes. If depdencies requires more than 15 minutes to finish perhaps the dependee jobs should not prestart"
-            );
-            this.ttl = 15;
-        }
         const outputs = getInput(INPUTS.OUTPUTS_FROM);
         if (outputs && outputs.trim()) {
             this.outputFiles = valuesFrom(outputs);
@@ -180,7 +174,11 @@ export default class WaitForJobs {
      */
     public start = async (): Promise<void> => {
         const { timeout, wait, cleanup, onRejected, summaries } = this;
-        await Promise.race([timeout(), wait()]).then(cleanup, onRejected);
+        if (this.ttl == 0) {
+            await wait().then(cleanup, onRejected)
+        } else {
+            await Promise.race([timeout(), wait()]).then(cleanup, onRejected);
+        }
         summaries.forEach(summary => info(summary.toString()));
         info(`took ${duration(this.startedAt)}, all job dependencies completed with success 🎉`);
     };
