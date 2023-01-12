@@ -174,11 +174,13 @@ export default class WaitForJobs {
      */
     public start = async (): Promise<void> => {
         const { timeout, wait, cleanup, onRejected, summaries } = this;
+        
         if (this.ttl == 0) {
             await wait().then(cleanup, onRejected)
         } else {
             await Promise.race([timeout(), wait()]).then(cleanup, onRejected);
         }
+        
         summaries.forEach(summary => info(summary.toString()));
         info(`took ${duration(this.startedAt)}, all job dependencies completed with success 🎉`);
     };
